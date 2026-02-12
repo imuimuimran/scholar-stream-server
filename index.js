@@ -6,6 +6,8 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const app = express();
 const idToken = await user.getIdToken();
 
+import paymentRoutes from "./routes/payment.routes.js";
+
 /* middlewares */
 app.use(cors());
 app.use(express.json());
@@ -21,6 +23,7 @@ app.use("/api/scholarships", require("./routes/scholarship.routes"));
 app.use("/api/applications", require("./routes/application.routes"));
 app.use("/api/reviews", require("./routes/review.routes"));
 app.use("/api/auth", require("./routes/auth.routes"));
+app.use("/api/payments", paymentRoutes);
 
 
 
