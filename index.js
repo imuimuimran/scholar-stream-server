@@ -11,6 +11,7 @@ import scholarshipsRoutes from "./routes/scholarships.routes.js";
 import applicationsRoutes from "./routes/applications.routes.js";
 import reviewsRoutes from "./routes/reviews.routes.js";
 import paymentsRoutes from "./routes/payments.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use("/api/scholarships", scholarshipsRoutes);
 app.use("/api/applications", applicationsRoutes);
 app.use("/api/reviews", reviewsRoutes);
 app.use("/api/payments", paymentsRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 /* health check */
 app.get("/", (req, res) => {
