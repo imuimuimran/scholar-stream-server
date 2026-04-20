@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
@@ -29,13 +29,11 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
 
-    // for analytics / fees
     totalPaid: {
       type: Number,
       default: 0,
     },
 
-    // soft delete option
     isBlocked: {
       type: Boolean,
       default: false,
@@ -44,7 +42,6 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// index for faster role filtering
 userSchema.index({ role: 1 });
 
-module.exports = mongoose.model("User", userSchema);
+export default mongoose.model("User", userSchema);

@@ -1,5 +1,11 @@
-const Stripe = require("stripe");
+import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const key = process.env.STRIPE_SECRET_KEY;
 
-module.exports = stripe;
+if (!key) {
+  throw new Error("STRIPE_SECRET_KEY missing. Check .env loading.");
+}
+
+const stripe = new Stripe(key);
+
+export default stripe;

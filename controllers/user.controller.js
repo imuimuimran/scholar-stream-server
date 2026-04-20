@@ -1,7 +1,6 @@
-const User = require("../models/User");
+import User from "../models/User.js";
 
-
-exports.getUsers = async (req, res) => {
+export const getUsers = async (req, res) => {
   const { role } = req.query;
 
   const filter = role ? { role } : {};
@@ -10,8 +9,7 @@ exports.getUsers = async (req, res) => {
   res.json(users);
 };
 
-
-exports.updateRole = async (req, res) => {
+export const updateRole = async (req, res) => {
   const updated = await User.findByIdAndUpdate(
     req.params.id,
     { role: req.body.role },
@@ -21,8 +19,7 @@ exports.updateRole = async (req, res) => {
   res.json(updated);
 };
 
-
-exports.deleteUser = async (req, res) => {
+export const deleteUser = async (req, res) => {
   await User.findByIdAndDelete(req.params.id);
   res.json({ message: "Deleted" });
 };

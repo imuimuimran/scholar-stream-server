@@ -1,11 +1,11 @@
-const stripe = require("../config/stripe");
+import stripe from "../config/stripe.js";
 
-exports.createPaymentIntent = async (req, res) => {
+export const createPaymentIntent = async (req, res) => {
   try {
     const { amount } = req.body;
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount * 100, // cents
+      amount: amount * 100,
       currency: "usd",
       payment_method_types: ["card"],
     });

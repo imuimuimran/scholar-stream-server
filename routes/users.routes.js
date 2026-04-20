@@ -1,10 +1,12 @@
-const router = require("express").Router();
-const ctrl = require("../controllers/user.controller");
-const verifyJWT = require("../middlewares/verifyJWT");
-const verifyAdmin = require("../middlewares/verifyAdmin");
+import express from "express";
+import * as ctrl from "../controllers/user.controller.js";
+import verifyJWT from "../middlewares/verifyJWT.js";
+import verifyAdmin from "../middlewares/verifyAdmin.js";
+
+const router = express.Router();
 
 router.get("/", verifyJWT, verifyAdmin, ctrl.getUsers);
 router.patch("/:id/role", verifyJWT, verifyAdmin, ctrl.updateRole);
 router.delete("/:id", verifyJWT, verifyAdmin, ctrl.deleteUser);
 
-module.exports = router;
+export default router; 

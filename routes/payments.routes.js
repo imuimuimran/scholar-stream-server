@@ -1,7 +1,9 @@
-const router = require("express").Router();
-const stripe = require("../config/stripe");
-const { createPaymentIntent } = require("../controllers/payment.controller");
-const verifyJWT = require("../middlewares/verifyJWT");
+import express from "express";
+import stripe from "../config/stripe.js";
+import { createPaymentIntent } from "../controllers/payment.controller.js";
+import verifyJWT from "../middlewares/verifyJWT.js";
+
+const router = express.Router();
 
 /*
   POST /api/payments/create-payment-intent
@@ -40,4 +42,4 @@ router.post("/create-checkout-session", verifyJWT, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

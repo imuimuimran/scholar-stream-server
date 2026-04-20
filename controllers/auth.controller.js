@@ -1,12 +1,11 @@
-const admin = require("../config/firebaseAdmin");
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
-
+import admin from "../config/firebaseAdmin.js";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
 /* ==================================
    Verify Firebase token & issue JWT
 ================================== */
-exports.firebaseLogin = async (req, res) => {
+export const firebaseLogin = async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
 
