@@ -18,6 +18,7 @@ router.get("/:id", getScholarshipById);
 
 /* ADMIN */
 router.post("/", verifyJWT, verifyAdmin, createScholarship);
+router.patch("/:id", verifyJWT, verifyAdmin, updateScholarship);
 router.put("/:id", verifyJWT, verifyAdmin, updateScholarship);
 router.delete("/:id", verifyJWT, verifyAdmin, deleteScholarship);
 

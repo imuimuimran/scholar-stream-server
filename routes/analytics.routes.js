@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getAnalyticsSummary,
   getDashboardStats,
   getApplicationsByCategory,
   getApplicationsByUniversity,
@@ -14,6 +15,13 @@ const router = express.Router();
 
 /* ADMIN ONLY */
 router.get("/stats", verifyJWT, verifyAdmin, getDashboardStats);
+
+router.get(
+  "/summary", 
+  verifyJWT, 
+  verifyAdmin, 
+  getAnalyticsSummary
+);
 
 router.get(
   "/applications/category",

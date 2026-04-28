@@ -5,6 +5,45 @@
 =================================================== */
 
 /* =============================
+   GET ANALYTICS SUMMARY
+============================= */
+
+import User from "../models/User.js";
+import Application from "../models/Application.js";
+
+export const getAnalyticsSummary = async (req, res) => {
+  try {
+    // total users
+    const totalUsers = await User.countDocuments();
+
+    // total applications
+    const totalApplications = await Application.countDocuments();
+
+    // total revenue (sum of totalAmount where paymentStatus = paid)
+    const revenueResult = await Application.aggregate([
+      { $match: { paymentStatus: "paid" } },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$totalAmount" },
+        },
+      },
+    ]);
+
+    const totalRevenue = revenueResult[0]?.totalRevenue || 0;
+
+    res.json({
+      totalUsers,
+      totalApplications,
+      totalRevenue,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to load analytics" });
+  }
+};
+
+/* =============================
    GET DASHBOARD SUMMARY
 ============================= */
 export const getDashboardStats = async (req, res) => {
