@@ -21,12 +21,15 @@ export const createApplication = async (req, res) => {
   }
 };
 
-/* GET ALL (Admin/Moderator) */
+/* ================= GET ALL APPLICATIONS (Moderator/Admin) ================= */
 export const getAllApplications = async (req, res) => {
   try {
     const db = req.db.collection("applications");
 
-    const apps = await db.find().toArray();
+    const apps = await db
+      .find()
+      .sort({ createdAt: -1 })
+      .toArray();
 
     res.json(apps);
   } catch (err) {
@@ -34,7 +37,7 @@ export const getAllApplications = async (req, res) => {
   }
 };
 
-/* GET BY ID */
+/* ================= GET APPLICATION BY ID ================= */
 export const getApplicationById = async (req, res) => {
   try {
     const db = req.db.collection("applications");
@@ -43,13 +46,16 @@ export const getApplicationById = async (req, res) => {
       _id: new ObjectId(req.params.id),
     });
 
-    if (!app) return res.status(404).json({ message: "Not found" });
+    if (!app) {
+      return res.status(404).json({ message: "Not found" });
+    }
 
     res.json(app);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 /* GET MY APPLICATIONS */
 export const getMyApplications = async (req, res) => {
@@ -66,12 +72,18 @@ export const getMyApplications = async (req, res) => {
   }
 };
 
-/* UPDATE STATUS */
+/* ================= UPDATE STATUS ================= */
 export const updateStatus = async (req, res) => {
   try {
     const db = req.db.collection("applications");
 
     const { status } = req.body;
+
+    const valid = ["pending", "processing", "completed", "rejected"];
+
+    if (!valid.includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
 
     await db.updateOne(
       { _id: new ObjectId(req.params.id) },
@@ -84,7 +96,7 @@ export const updateStatus = async (req, res) => {
   }
 };
 
-/* UPDATE FEEDBACK */
+/* ================= UPDATE FEEDBACK ================= */
 export const updateFeedback = async (req, res) => {
   try {
     const db = req.db.collection("applications");
@@ -96,7 +108,7 @@ export const updateFeedback = async (req, res) => {
       { $set: { feedback } }
     );
 
-    res.json({ message: "Feedback added" });
+    res.json({ message: "Feedback updated" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

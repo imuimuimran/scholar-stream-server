@@ -23,6 +23,7 @@ router.delete("/:id", verifyJWT, deleteApplication);
 
 /* ================= MODERATOR / ADMIN ================= */
 router.get("/", verifyJWT, verifyModerator, getAllApplications);
+router.get("/:id", verifyJWT, verifyModerator, getApplicationById);
 router.patch("/:id/status", verifyJWT, verifyModerator, updateStatus);
 router.patch("/:id/feedback", verifyJWT, verifyModerator, updateFeedback);
 

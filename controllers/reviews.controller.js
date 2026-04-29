@@ -5,10 +5,33 @@ import { ObjectId } from "mongodb";
 =================================================== */
 export const createReview = async (req, res) => {
   try {
+
+    // VALIDATION
+    if (!req.body.rating || !req.body.comment || !req.body.scholarshipId) {
+      return res.status(400).json({ message: "Rating, comment and scholarshipID required" });
+    }
+
+    if (req.body.rating < 1 || req.body.rating > 5) {
+      return res.status(400).json({ message: "Rating must be between 1 and 5" });
+    }
+
     const db = req.db.collection("reviews");
 
+    // DUPLICATE CHECK
+    const existing = await db.findOne({
+      scholarshipId: new ObjectId(req.body.scholarshipId),
+      userEmail: req.user.email,
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        message: "You already reviewed this scholarship",
+      });
+    }
+
+
     const review = {
-      scholarshipId: req.body.scholarshipId,
+      scholarshipId: new ObjectId(req.body.scholarshipId),
       scholarshipName: req.body.scholarshipName,
       universityName: req.body.universityName,
 
@@ -38,7 +61,7 @@ export const getReviewsByScholarship = async (req, res) => {
     const db = req.db.collection("reviews");
 
     const reviews = await db
-      .find({ scholarshipId: req.params.id })
+      .find({ scholarshipId: new ObjectId(req.params.id) })
       .sort({ createdAt: -1 })
       .toArray();
 
