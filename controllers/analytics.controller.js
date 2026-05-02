@@ -1,62 +1,18 @@
 /* ===================================================
-   ADMIN ANALYTICS CONTROLLER
-   - KPI stats
-   - Charts (category, university)
+   ANALYTICS CONTROLLER (CLEAN VERSION)
 =================================================== */
 
 /* =============================
-   GET ANALYTICS SUMMARY
-============================= */
-
-import User from "../models/User.js";
-import Application from "../models/Application.js";
-
-export const getAnalyticsSummary = async (req, res) => {
-  try {
-    // total users
-    const totalUsers = await User.countDocuments();
-
-    // total applications
-    const totalApplications = await Application.countDocuments();
-
-    // total revenue (sum of totalAmount where paymentStatus = paid)
-    const revenueResult = await Application.aggregate([
-      { $match: { paymentStatus: "paid" } },
-      {
-        $group: {
-          _id: null,
-          totalRevenue: { $sum: "$totalAmount" },
-        },
-      },
-    ]);
-
-    const totalRevenue = revenueResult[0]?.totalRevenue || 0;
-
-    res.json({
-      totalUsers,
-      totalApplications,
-      totalRevenue,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to load analytics" });
-  }
-};
-
-/* =============================
-   GET DASHBOARD SUMMARY
+   SUMMARY (KPI CARDS)
 ============================= */
 export const getDashboardStats = async (req, res) => {
   try {
-    const usersCol = req.db.collection("users");
-    const appsCol = req.db.collection("applications");
-    const scholarshipsCol = req.db.collection("scholarships");
+    const db = req.db;
 
-    const totalUsers = await usersCol.countDocuments();
-    const totalApplications = await appsCol.countDocuments();
+    const totalUsers = await db.collection("users").countDocuments();
+    const totalApplications = await db.collection("applications").countDocuments();
 
-    /* Total Revenue (only paid) */
-    const revenueAgg = await appsCol
+    const revenueAgg = await db.collection("applications")
       .aggregate([
         { $match: { paymentStatus: "paid" } },
         {
@@ -70,13 +26,10 @@ export const getDashboardStats = async (req, res) => {
 
     const totalRevenue = revenueAgg[0]?.total || 0;
 
-    const totalScholarships = await scholarshipsCol.countDocuments();
-
     res.json({
       totalUsers,
       totalApplications,
       totalRevenue,
-      totalScholarships,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -84,17 +37,17 @@ export const getDashboardStats = async (req, res) => {
 };
 
 /* =============================
-   APPLICATIONS BY CATEGORY (Pie Chart)
+   APPLICATIONS BY CATEGORY
 ============================= */
 export const getApplicationsByCategory = async (req, res) => {
   try {
-    const appsCol = req.db.collection("applications");
+    const db = req.db;
 
-    const data = await appsCol
+    const data = await db.collection("applications")
       .aggregate([
         {
           $group: {
-            _id: "$category",
+            _id: "$scholarshipCategory", // ✅ IMPORTANT FIX
             count: { $sum: 1 },
           },
         },
@@ -105,6 +58,7 @@ export const getApplicationsByCategory = async (req, res) => {
             count: 1,
           },
         },
+        { $sort: { count: -1 } },
       ])
       .toArray();
 
@@ -115,13 +69,13 @@ export const getApplicationsByCategory = async (req, res) => {
 };
 
 /* =============================
-   APPLICATIONS BY UNIVERSITY (Bar Chart)
+   TOP UNIVERSITIES
 ============================= */
 export const getApplicationsByUniversity = async (req, res) => {
   try {
-    const appsCol = req.db.collection("applications");
+    const db = req.db;
 
-    const data = await appsCol
+    const data = await db.collection("applications")
       .aggregate([
         {
           $group: {
@@ -129,8 +83,6 @@ export const getApplicationsByUniversity = async (req, res) => {
             count: { $sum: 1 },
           },
         },
-        { $sort: { count: -1 } },
-        { $limit: 10 }, // top 10
         {
           $project: {
             _id: 0,
@@ -138,6 +90,8 @@ export const getApplicationsByUniversity = async (req, res) => {
             count: 1,
           },
         },
+        { $sort: { count: -1 } },
+        { $limit: 5 },
       ])
       .toArray();
 
@@ -148,17 +102,17 @@ export const getApplicationsByUniversity = async (req, res) => {
 };
 
 /* =============================
-   APPLICATION STATUS DISTRIBUTION
+   APPLICATION STATUS
 ============================= */
 export const getApplicationStatusStats = async (req, res) => {
   try {
-    const appsCol = req.db.collection("applications");
+    const db = req.db;
 
-    const data = await appsCol
+    const data = await db.collection("applications")
       .aggregate([
         {
           $group: {
-            _id: "$status",
+            _id: "$applicationStatus", // ✅ FIXED FIELD NAME
             count: { $sum: 1 },
           },
         },
@@ -179,13 +133,13 @@ export const getApplicationStatusStats = async (req, res) => {
 };
 
 /* =============================
-   REVENUE OVER TIME (Line Chart)
+   REVENUE OVER TIME
 ============================= */
 export const getRevenueOverTime = async (req, res) => {
   try {
-    const appsCol = req.db.collection("applications");
+    const db = req.db;
 
-    const data = await appsCol
+    const data = await db.collection("applications")
       .aggregate([
         { $match: { paymentStatus: "paid" } },
         {
@@ -197,24 +151,16 @@ export const getRevenueOverTime = async (req, res) => {
             revenue: { $sum: "$applicationFees" },
           },
         },
-        {
-          $sort: {
-            "_id.year": 1,
-            "_id.month": 1,
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            year: "$_id.year",
-            month: "$_id.month",
-            revenue: 1,
-          },
-        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } },
       ])
       .toArray();
 
-    res.json(data);
+    const formatted = data.map(item => ({
+      month: `${item._id.year}-${item._id.month}`,
+      revenue: item.revenue,
+    }));
+
+    res.json(formatted);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

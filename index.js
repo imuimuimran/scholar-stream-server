@@ -16,9 +16,11 @@ import analyticsRoutes from "./routes/analytics.routes.js";
 const app = express();
 
 app.use(cors());
+app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
 
 /* DB connection */
+
 const db = await connectDB();
 
 /* attach db to req */

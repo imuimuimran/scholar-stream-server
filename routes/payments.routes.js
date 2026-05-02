@@ -2,6 +2,7 @@ import express from "express";
 import stripe from "../config/stripe.js";
 import { createPaymentIntent } from "../controllers/payment.controller.js";
 import verifyJWT from "../middlewares/verifyJWT.js";
+import { stripeWebhook } from "../controllers/webhook.controller.js";
 
 const router = express.Router();
 
@@ -9,6 +10,16 @@ const router = express.Router();
   POST /api/payments/create-payment-intent
 */
 router.post("/create-payment-intent", verifyJWT, createPaymentIntent);
+
+router.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  (req, res, next) => {
+    req.db = global.db;
+    next();
+  },
+  stripeWebhook
+);
 
 /*
   Stripe Checkout Session (optional)

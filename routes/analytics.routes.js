@@ -1,6 +1,5 @@
 import express from "express";
 import {
-  getAnalyticsSummary,
   getDashboardStats,
   getApplicationsByCategory,
   getApplicationsByUniversity,
@@ -13,42 +12,10 @@ import verifyAdmin from "../middlewares/verifyAdmin.js";
 
 const router = express.Router();
 
-/* ADMIN ONLY */
-router.get("/stats", verifyJWT, verifyAdmin, getDashboardStats);
-
-router.get(
-  "/summary", 
-  verifyJWT, 
-  verifyAdmin, 
-  getAnalyticsSummary
-);
-
-router.get(
-  "/applications/category",
-  verifyJWT,
-  verifyAdmin,
-  getApplicationsByCategory
-);
-
-router.get(
-  "/applications/university",
-  verifyJWT,
-  verifyAdmin,
-  getApplicationsByUniversity
-);
-
-router.get(
-  "/applications/status",
-  verifyJWT,
-  verifyAdmin,
-  getApplicationStatusStats
-);
-
-router.get(
-  "/revenue",
-  verifyJWT,
-  verifyAdmin,
-  getRevenueOverTime
-);
+router.get("/summary", verifyJWT, verifyAdmin, getDashboardStats);
+router.get("/category", verifyJWT, verifyAdmin, getApplicationsByCategory);
+router.get("/university", verifyJWT, verifyAdmin, getApplicationsByUniversity);
+router.get("/status", verifyJWT, verifyAdmin, getApplicationStatusStats);
+router.get("/revenue", verifyJWT, verifyAdmin, getRevenueOverTime);
 
 export default router;
