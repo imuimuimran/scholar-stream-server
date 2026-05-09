@@ -7,27 +7,62 @@ import User from "../models/User.js";
 ================================== */
 export const firebaseLogin = async (req, res) => {
   try {
+    console.log("AUTH HEADER:", req.headers.authorization);
+
     const authHeader = req.headers.authorization;
 
-    if (!authHeader)
-      return res.status(401).json({ message: "No token provided" });
+    /* check authorization header */
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "No token provided",
+      });
+    }
 
+    /* get firebase token */
     const idToken = authHeader.split(" ")[1];
+
+    console.log("Firebase token received");
 
     /* verify firebase token */
     const decodedToken = await admin.auth().verifyIdToken(idToken);
 
+    console.log("Firebase verified:", decodedToken.email);
+
     const { email, name, picture } = decodedToken;
 
-    /* find or create user */
-    let user = await User.findOne({ email });
+    /* find user */
+    let user;
 
-    if (!user) {
-      user = await User.create({
-        name,
-        email,
-        photoURL: picture,
-        role: "Student",
+    try {
+      user = await User.findOne({ email });
+
+      /* create user if not exists */
+      if (!user) {
+        user = await User.create({
+          name: name || "Unknown User",
+          email,
+          photoURL: picture || "",
+          role: "Student",
+        });
+
+        console.log("New user created ✅");
+
+      } else {
+
+        /* auto sync latest firebase info */
+        user.name = name || user.name;
+        user.photoURL = picture || user.photoURL;
+
+        await user.save();
+
+        console.log("Existing user synced ✅");
+      }
+
+    } catch (dbError) {
+      console.error("DATABASE ERROR:", dbError.message);
+
+      return res.status(500).json({
+        message: "Database error",
       });
     }
 
@@ -39,16 +74,22 @@ export const firebaseLogin = async (req, res) => {
         role: user.role,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      {
+        expiresIn: "7d",
+      }
     );
 
-    res.json({
+    /* success response */
+    res.status(200).json({
       token: serverToken,
       user,
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(401).json({ message: "Firebase verification failed" });
+    console.error("Firebase ERROR:", err.message);
+
+    res.status(401).json({
+      message: "Firebase verification failed",
+    });
   }
 };

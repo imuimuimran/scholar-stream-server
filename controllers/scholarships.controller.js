@@ -1,28 +1,27 @@
-import { ObjectId } from "mongodb";
+import Scholarship from "../models/Scholarship.js";
 
 /* ======================================================
    GET ALL (search + filter + sort + pagination)
 ====================================================== */
 export const getScholarships = async (req, res) => {
   try {
-    const db = req.db.collection("scholarships");
-
-    /* query params */
     const {
       page = 1,
       limit = 6,
       search = "",
-      country,
-      category,
-      sort,
+      country = "",
+      category = "",
+      sort = "",
     } = req.query;
 
-    const skip = (page - 1) * limit;
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+
+    const skip = (pageNumber - 1) * limitNumber;
 
     /* ================= FILTER ================= */
     const filter = {};
 
-    /* search */
     if (search) {
       filter.$or = [
         { scholarshipName: { $regex: search, $options: "i" } },
@@ -31,33 +30,50 @@ export const getScholarships = async (req, res) => {
       ];
     }
 
-    if (country) filter.country = country;
-    if (category) filter.category = category;
+    if (country) {
+      filter.universityCountry = country;
+    }
+
+    if (category) {
+      filter.scholarshipCategory = category;
+    }
 
     /* ================= SORT ================= */
     let sortOption = { createdAt: -1 };
 
-    if (sort === "fees_asc") sortOption = { applicationFees: 1 };
-    if (sort === "fees_desc") sortOption = { applicationFees: -1 };
-    if (sort === "date_desc") sortOption = { createdAt: -1 };
+    if (sort === "fees_asc") {
+      sortOption = { applicationFees: 1 };
+    }
 
-    /* ================= DB QUERY ================= */
-    const total = await db.countDocuments(filter);
+    if (sort === "fees_desc") {
+      sortOption = { applicationFees: -1 };
+    }
 
-    const data = await db
-      .find(filter)
+    if (sort === "date_desc") {
+      sortOption = { createdAt: -1 };
+    }
+
+    /* ================= QUERY ================= */
+    const total = await Scholarship.countDocuments(filter);
+
+    const data = await Scholarship.find(filter)
       .sort(sortOption)
       .skip(skip)
-      .limit(Number(limit))
-      .toArray();
+      .limit(limitNumber);
 
     res.json({
       data,
-      totalPages: Math.ceil(total / limit),
-      currentPage: Number(page),
+      totalPages: Math.ceil(total / limitNumber),
+      currentPage: pageNumber,
     });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("GET SCHOLARSHIPS ERROR:", err);
+
+    res.status(500).json({
+      message: "Failed to fetch scholarships",
+      error: err.message,
+    });
   }
 };
 
@@ -66,13 +82,22 @@ export const getScholarships = async (req, res) => {
 ====================================================== */
 export const getScholarshipById = async (req, res) => {
   try {
-    const scholarship = await req.db
-      .collection("scholarships")
-      .findOne({ _id: new ObjectId(req.params.id) });
+    const scholarship = await Scholarship.findById(req.params.id);
+
+    if (!scholarship) {
+      return res.status(404).json({
+        message: "Scholarship not found",
+      });
+    }
 
     res.json(scholarship);
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("GET SINGLE SCHOLARSHIP ERROR:", err);
+
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
@@ -81,18 +106,21 @@ export const getScholarshipById = async (req, res) => {
 ====================================================== */
 export const createScholarship = async (req, res) => {
   try {
-    const scholarship = {
+    const scholarship = new Scholarship({
       ...req.body,
-      createdAt: new Date(),
-    };
+      postedUserEmail: req.user?.email, // from JWT middleware
+    });
 
-    const result = await req.db
-      .collection("scholarships")
-      .insertOne(scholarship);
+    const result = await scholarship.save();
 
     res.status(201).json(result);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("CREATE SCHOLARSHIP ERROR:", err);
+
+    res.status(500).json({
+      message: "Failed to create scholarship",
+      error: err.message,
+    });
   }
 };
 
@@ -101,14 +129,20 @@ export const createScholarship = async (req, res) => {
 ====================================================== */
 export const updateScholarship = async (req, res) => {
   try {
-    const result = await req.db.collection("scholarships").updateOne(
-      { _id: new ObjectId(req.params.id) },
-      { $set: req.body }
+    const updated = await Scholarship.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
     );
 
-    res.json(result);
+    res.json(updated);
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("UPDATE SCHOLARSHIP ERROR:", err);
+
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
@@ -117,12 +151,17 @@ export const updateScholarship = async (req, res) => {
 ====================================================== */
 export const deleteScholarship = async (req, res) => {
   try {
-    const result = await req.db
-      .collection("scholarships")
-      .deleteOne({ _id: new ObjectId(req.params.id) });
+    await Scholarship.findByIdAndDelete(req.params.id);
 
-    res.json(result);
+    res.json({
+      message: "Scholarship deleted successfully",
+    });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("DELETE SCHOLARSHIP ERROR:", err);
+
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };

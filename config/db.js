@@ -1,13 +1,15 @@
-import { MongoClient } from "mongodb";
+import mongoose from "mongoose";
 
 const connectDB = async () => {
-  const client = new MongoClient(process.env.MONGO_URI);
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
 
-  await client.connect();
+    console.log("MongoDB Connected ✅");
 
-  console.log("MongoDB Connected ✅");
-
-  return client.db("scholarStream");
+  } catch (error) {
+    console.error("MongoDB connection failed ❌", error.message);
+    process.exit(1);
+  }
 };
 
 export default connectDB;

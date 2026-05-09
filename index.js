@@ -15,34 +15,79 @@ import analyticsRoutes from "./routes/analytics.routes.js";
 
 const app = express();
 
+/* ================= MIDDLEWARES ================= */
+
 app.use(cors());
-app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
+
+/* Stripe webhook needs raw body */
+app.use(
+  "/api/payments/webhook",
+  express.raw({ type: "application/json" })
+);
+
 app.use(express.json());
 
-/* DB connection */
+/* ================= HEALTH CHECK ================= */
 
-const db = await connectDB();
-
-/* attach db to req */
-app.use((req, res, next) => {
-  req.db = db;
-  next();
-});
-
-/* routes */
-app.use("/api/auth", authRoutes);
-app.use("/api/users", usersRoutes);
-app.use("/api/scholarships", scholarshipsRoutes);
-app.use("/api/applications", applicationsRoutes);
-app.use("/api/reviews", reviewsRoutes);
-app.use("/api/payments", paymentsRoutes);
-app.use("/api/analytics", analyticsRoutes);
-
-/* health check */
 app.get("/", (req, res) => {
   res.send("ScholarStream API running");
 });
 
-app.listen(process.env.PORT || 5000, () =>
-  console.log("Server running on port 5000")
-);
+/* ================= START SERVER ================= */
+
+const startServer = async () => {
+  try {
+
+    /* CONNECT DATABASE */
+    const db = await connectDB();
+
+    console.log("MongoDB connected ✅");
+
+    /* ATTACH DB TO REQUEST */
+    app.use((req, res, next) => {
+      req.db = db;
+      next();
+    });
+
+    /* ================= ROUTES ================= */
+
+    app.use("/api/auth", authRoutes);
+    app.use("/api/users", usersRoutes);
+    app.use("/api/scholarships", scholarshipsRoutes);
+    app.use("/api/applications", applicationsRoutes);
+    app.use("/api/reviews", reviewsRoutes);
+    app.use("/api/payments", paymentsRoutes);
+    app.use("/api/analytics", analyticsRoutes);
+
+    /* ================= 404 ================= */
+
+    app.use((req, res) => {
+      res.status(404).json({
+        message: "Route not found",
+      });
+    });
+
+    /* ================= ERROR HANDLER ================= */
+
+    app.use((err, req, res, next) => {
+      console.error(err.stack);
+
+      res.status(500).json({
+        message: "Internal Server Error",
+      });
+    });
+
+    /* ================= LISTEN ================= */
+
+    const PORT = process.env.PORT || 5000;
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+
+  } catch (error) {
+    console.error("Server startup failed ❌", error);
+  }
+};
+
+startServer();

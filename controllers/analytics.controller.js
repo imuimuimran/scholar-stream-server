@@ -1,38 +1,50 @@
-/* ===================================================
-   ANALYTICS CONTROLLER (CLEAN VERSION)
-=================================================== */
+import User from "../models/User.js";
+import Application from "../models/Application.js";
 
 /* =============================
    SUMMARY (KPI CARDS)
 ============================= */
 export const getDashboardStats = async (req, res) => {
   try {
-    const db = req.db;
 
-    const totalUsers = await db.collection("users").countDocuments();
-    const totalApplications = await db.collection("applications").countDocuments();
+    const totalUsers = await User.countDocuments();
+    const totalApplications = await Application.countDocuments();
 
-    const revenueAgg = await db.collection("applications")
-      .aggregate([
-        { $match: { paymentStatus: "paid" } },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: "$applicationFees" },
+    const revenueResult = await Application.aggregate([
+      {
+        $match: {
+          paymentStatus: "paid",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: {
+            $sum: "$applicationFees",
           },
         },
-      ])
-      .toArray();
+      },
+    ]);
 
-    const totalRevenue = revenueAgg[0]?.total || 0;
+    const totalRevenue =
+      revenueResult[0]?.totalRevenue || 0;
 
-    res.json({
+    res.status(200).json({
       totalUsers,
       totalApplications,
       totalRevenue,
     });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+  } catch (error) {
+
+    console.error(
+      "Dashboard Stats Error:",
+      error
+    );
+
+    res.status(500).json({
+      message: "Failed to load dashboard stats",
+    });
   }
 };
 
@@ -43,11 +55,17 @@ export const getApplicationsByCategory = async (req, res) => {
   try {
     const db = req.db;
 
+    if (!db) {
+      return res.status(500).json({
+        message: "Database not connected",
+      });
+    }
+
     const data = await db.collection("applications")
       .aggregate([
         {
           $group: {
-            _id: "$scholarshipCategory", // ✅ IMPORTANT FIX
+            _id: "$scholarshipCategory", 
             count: { $sum: 1 },
           },
         },
@@ -74,6 +92,12 @@ export const getApplicationsByCategory = async (req, res) => {
 export const getApplicationsByUniversity = async (req, res) => {
   try {
     const db = req.db;
+
+    if (!db) {
+      return res.status(500).json({
+        message: "Database not connected",
+      });
+    }
 
     const data = await db.collection("applications")
       .aggregate([
@@ -108,11 +132,17 @@ export const getApplicationStatusStats = async (req, res) => {
   try {
     const db = req.db;
 
+    if (!db) {
+      return res.status(500).json({
+        message: "Database not connected",
+      });
+    }
+
     const data = await db.collection("applications")
       .aggregate([
         {
           $group: {
-            _id: "$applicationStatus", // ✅ FIXED FIELD NAME
+            _id: "$applicationStatus",
             count: { $sum: 1 },
           },
         },
@@ -138,6 +168,12 @@ export const getApplicationStatusStats = async (req, res) => {
 export const getRevenueOverTime = async (req, res) => {
   try {
     const db = req.db;
+
+    if (!db) {
+      return res.status(500).json({
+        message: "Database not connected",
+      });
+    }
 
     const data = await db.collection("applications")
       .aggregate([

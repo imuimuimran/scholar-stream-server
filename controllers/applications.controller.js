@@ -141,3 +141,22 @@ export const deleteApplication = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+/* GET MY Payments */
+export const getMyPayments = async (req, res) => {
+  try {
+    const db = req.db.collection("applications");
+
+    const payments = await db
+      .find({
+        userEmail: req.user.email,
+        paymentStatus: "paid",
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    res.json(payments);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

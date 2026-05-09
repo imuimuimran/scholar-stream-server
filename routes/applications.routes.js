@@ -12,6 +12,7 @@ import {
   updateStatus,
   updateFeedback,
   deleteApplication,
+  getMyPayments,
 } from "../controllers/applications.controller.js";
 
 const router = express.Router();
@@ -20,6 +21,7 @@ const router = express.Router();
 router.post("/", verifyJWT, createApplication);
 router.get("/my", verifyJWT, getMyApplications);
 router.delete("/:id", verifyJWT, deleteApplication);
+router.get("/my-payments", verifyJWT, getMyPayments);
 
 /* ================= MODERATOR / ADMIN ================= */
 router.get("/", verifyJWT, verifyModerator, getAllApplications);
