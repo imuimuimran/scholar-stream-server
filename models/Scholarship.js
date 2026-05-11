@@ -101,6 +101,15 @@ const scholarshipSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    averageRating: {
+      type: Number,
+      default: 0,
+    },
+
+    reviewsCount: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
@@ -116,13 +125,7 @@ scholarshipSchema.index({
   universityName: "text",
 });
 
-// scholarshipSchema.index({
-//   applicationFees: 1,
-// });
 
-// scholarshipSchema.index({
-//   scholarshipPostDate: -1,
-// });
 
 /* ===============================
    MODEL EXPORT

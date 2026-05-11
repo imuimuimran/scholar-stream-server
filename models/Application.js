@@ -34,7 +34,7 @@ const applicationSchema = new mongoose.Schema(
       default: "unpaid",
       index: true,
     },
-    stripePaymentIntentId: { type: String, default: "" },
+    transactionId: { type: String, default: "" },
     feedback: { type: String, default: "" },
     applicationDate: { type: Date, default: Date.now },
   },

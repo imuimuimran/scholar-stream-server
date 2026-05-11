@@ -1,25 +1,29 @@
-import { ObjectId } from "mongodb";
+import mongoose from "mongoose";
+import Review from "../models/Review.js";
 
 /* ===================================================
-   CREATE REVIEW (Student)
+   CREATE REVIEW
 =================================================== */
 export const createReview = async (req, res) => {
   try {
+    const {
+      scholarshipId,
+      rating,
+      comment,
+      reviewerName,
+      reviewerEmail,
+      reviewerImage,
+      universityName,
+    } = req.body;
 
-    // VALIDATION
-    if (!req.body.rating || !req.body.comment || !req.body.scholarshipId) {
-      return res.status(400).json({ message: "Rating, comment and scholarshipID required" });
+    if (!scholarshipId || !rating || !comment) {
+      return res.status(400).json({
+        message: "ScholarshipId, rating and comment are required",
+      });
     }
 
-    if (req.body.rating < 1 || req.body.rating > 5) {
-      return res.status(400).json({ message: "Rating must be between 1 and 5" });
-    }
-
-    const db = req.db.collection("reviews");
-
-    // DUPLICATE CHECK
-    const existing = await db.findOne({
-      scholarshipId: new ObjectId(req.body.scholarshipId),
+    const existing = await Review.findOne({
+      scholarshipId,
       userEmail: req.user.email,
     });
 
@@ -29,27 +33,26 @@ export const createReview = async (req, res) => {
       });
     }
 
-
-    const review = {
-      scholarshipId: new ObjectId(req.body.scholarshipId),
-      scholarshipName: req.body.scholarshipName,
-      universityName: req.body.universityName,
-
-      rating: Number(req.body.rating),
-      comment: req.body.comment,
-
+    const review = new Review({
+      scholarshipId,
+      userId: req.user.id,
+      universityName,
+      rating,
+      comment,
+      reviewerName,
+      reviewerEmail,
+      reviewerImage,
       userEmail: req.user.email,
-      userName: req.user.name,
-      userImage: req.user.photo,
+    });
 
-      createdAt: new Date(),
-    };
+    await review.save();
 
-    const result = await db.insertOne(review);
+    res.status(201).json(review);
 
-    res.status(201).json(result);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
@@ -58,117 +61,126 @@ export const createReview = async (req, res) => {
 =================================================== */
 export const getReviewsByScholarship = async (req, res) => {
   try {
-    const db = req.db.collection("reviews");
 
-    const reviews = await db
-      .find({ scholarshipId: new ObjectId(req.params.id) })
-      .sort({ createdAt: -1 })
-      .toArray();
+    const reviews = await Review.find({
+      scholarshipId: req.params.id,
+    }).sort({ createdAt: -1 });
 
     res.json(reviews);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
 /* ===================================================
-   GET MY REVIEWS (Student)
+   GET MY REVIEWS
 =================================================== */
 export const getMyReviews = async (req, res) => {
   try {
-    const db = req.db.collection("reviews");
 
-    const reviews = await db
-      .find({ userEmail: req.user.email })
-      .sort({ createdAt: -1 })
-      .toArray();
+    const reviews = await Review.find({
+      userEmail: req.user.email,
+    }).sort({ createdAt: -1 });
 
     res.json(reviews);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
 /* ===================================================
-   GET ALL REVIEWS (Moderator/Admin)
+   GET ALL REVIEWS
 =================================================== */
 export const getAllReviews = async (req, res) => {
   try {
-    const db = req.db.collection("reviews");
 
-    const reviews = await db
-      .find()
-      .sort({ createdAt: -1 })
-      .toArray();
+    const reviews = await Review.find()
+      .sort({ createdAt: -1 });
 
     res.json(reviews);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
 /* ===================================================
-   UPDATE REVIEW (Student)
+   UPDATE REVIEW
 =================================================== */
 export const updateReview = async (req, res) => {
   try {
-    const db = req.db.collection("reviews");
 
     const { rating, comment } = req.body;
 
-    const review = await db.findOne({
-      _id: new ObjectId(req.params.id),
+    const review = await Review.findOne({
+      _id: req.params.id,
       userEmail: req.user.email,
     });
 
     if (!review) {
-      return res.status(404).json({ message: "Review not found" });
+      return res.status(404).json({
+        message: "Review not found",
+      });
     }
 
-    await db.updateOne(
-      { _id: review._id },
-      {
-        $set: {
-          rating: Number(rating),
-          comment,
-          updatedAt: new Date(),
-        },
-      }
-    );
+    review.rating = rating;
+    review.comment = comment;
 
-    res.json({ message: "Review updated" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    await review.save();
+
+    res.json(review);
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
 /* ===================================================
-   DELETE REVIEW (Student/Moderator)
+   DELETE REVIEW
 =================================================== */
 export const deleteReview = async (req, res) => {
   try {
-    const db = req.db.collection("reviews");
 
-    const review = await db.findOne({
-      _id: new ObjectId(req.params.id),
-    });
+    const review = await Review.findById(req.params.id);
 
     if (!review) {
-      return res.status(404).json({ message: "Not found" });
+      return res.status(404).json({
+        message: "Review not found",
+      });
     }
 
-    // allow owner OR moderator/admin
+    const isPrivileged =
+      req.user.role === "Admin" ||
+      req.user.role === "Moderator";
+
     if (
-      review.userEmail !== req.user.email &&
-      !["Admin", "Moderator"].includes(req.user.role)
+      !isPrivileged &&
+      review.userEmail !== req.user.email
     ) {
-      return res.status(403).json({ message: "Not allowed" });
+      return res.status(403).json({
+        message: "Forbidden access",
+      });
     }
 
-    await db.deleteOne({ _id: review._id });
+    await Review.findByIdAndDelete(req.params.id);
 
-    res.json({ message: "Deleted" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.json({
+      message: "Review deleted successfully",
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };

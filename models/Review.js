@@ -15,11 +15,11 @@ const reviewSchema = new mongoose.Schema(
       index: true,
     },
     universityName: { type: String, required: true },
-    userName: { type: String, required: true },
+    reviewerName: { type: String, required: true },
     userEmail: { type: String, required: true },
     userImage: { type: String, default: "" },
-    ratingPoint: { type: Number, required: true, min: 1, max: 5 },
-    reviewComment: {
+    rating: { type: Number, required: true, min: 1, max: 5 },
+    comment: {
       type: String,
       required: true,
       trim: true,

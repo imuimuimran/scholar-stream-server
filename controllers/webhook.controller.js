@@ -1,61 +1,46 @@
 import stripe from "../config/stripe.js";
-import { ObjectId } from "mongodb";
+import Application from "../models/Application.js";
 
 export const stripeWebhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];
 
   try {
+
     const event = stripe.webhooks.constructEvent(
       req.body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
 
-    /* ================= PAYMENT SUCCESS ================= */
     if (event.type === "payment_intent.succeeded") {
+
       const paymentIntent = event.data.object;
 
-      const metadata = paymentIntent.metadata;
-
-      const db = req.db.collection("applications");
-
-      // prevent duplicate entry
-      const existing = await db.findOne({
-        paymentIntentId: paymentIntent.id,
+      const existing = await Application.findOne({
+        transactionId: paymentIntent.id,
       });
 
       if (existing) {
-        console.log("Duplicate payment ignored");
         return res.json({ received: true });
       }
 
-
-       /* ================= CREATE APPLICATION ================= */
-      const application = {
-        scholarshipId: metadata.scholarshipId,
-        scholarshipName: metadata.scholarshipName,
-        universityName: metadata.universityName,
-
-        userEmail: metadata.userEmail,
-
-        paymentIntentId: paymentIntent.id,
-        amount: paymentIntent.amount / 100,
-
-        paymentStatus: "paid",
-        status: "pending",
-        feedback: "",
-
-        createdAt: new Date(),
-      };
-
-      await db.insertOne(application);
-
-      console.log("Application saved via webhook");
+      await Application.findByIdAndUpdate(
+        paymentIntent.metadata.applicationId,
+        {
+          paymentStatus: "paid",
+          transactionId: paymentIntent.id,
+        }
+      );
     }
 
     res.json({ received: true });
-  } catch (err) {
-    console.error("Webhook Error:", err.message);
-    res.status(400).send(`Webhook Error: ${err.message}`);
+
+  } catch (error) {
+
+    console.error("Webhook Error:", error.message);
+
+    res.status(400).send(
+      `Webhook Error: ${error.message}`
+    );
   }
 };

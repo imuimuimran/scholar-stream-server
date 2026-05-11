@@ -2,34 +2,38 @@ import User from "../models/User.js";
 import Application from "../models/Application.js";
 
 /* =============================
-   SUMMARY (KPI CARDS)
+   DASHBOARD STATS
 ============================= */
 export const getDashboardStats = async (req, res) => {
   try {
 
-    const totalUsers = await User.countDocuments();
-    const totalApplications = await Application.countDocuments();
+    const totalUsers =
+      await User.countDocuments();
 
-    const revenueResult = await Application.aggregate([
-      {
-        $match: {
-          paymentStatus: "paid",
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalRevenue: {
-            $sum: "$applicationFees",
+    const totalApplications =
+      await Application.countDocuments();
+
+    const revenueResult =
+      await Application.aggregate([
+        {
+          $match: {
+            paymentStatus: "paid",
           },
         },
-      },
-    ]);
+        {
+          $group: {
+            _id: null,
+            totalRevenue: {
+              $sum: "$totalAmount",
+            },
+          },
+        },
+      ]);
 
     const totalRevenue =
       revenueResult[0]?.totalRevenue || 0;
 
-    res.status(200).json({
+    res.json({
       totalUsers,
       totalApplications,
       totalRevenue,
@@ -37,13 +41,8 @@ export const getDashboardStats = async (req, res) => {
 
   } catch (error) {
 
-    console.error(
-      "Dashboard Stats Error:",
-      error
-    );
-
     res.status(500).json({
-      message: "Failed to load dashboard stats",
+      message: error.message,
     });
   }
 };
@@ -53,112 +52,103 @@ export const getDashboardStats = async (req, res) => {
 ============================= */
 export const getApplicationsByCategory = async (req, res) => {
   try {
-    const db = req.db;
 
-    if (!db) {
-      return res.status(500).json({
-        message: "Database not connected",
-      });
-    }
-
-    const data = await db.collection("applications")
-      .aggregate([
-        {
-          $group: {
-            _id: "$scholarshipCategory", 
-            count: { $sum: 1 },
-          },
+    const data = await Application.aggregate([
+      {
+        $group: {
+          _id: "$scholarshipCategory",
+          count: { $sum: 1 },
         },
-        {
-          $project: {
-            _id: 0,
-            category: "$_id",
-            count: 1,
-          },
+      },
+      {
+        $project: {
+          _id: 0,
+          category: "$_id",
+          count: 1,
         },
-        { $sort: { count: -1 } },
-      ])
-      .toArray();
+      },
+      {
+        $sort: { count: -1 },
+      },
+    ]);
 
     res.json(data);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
 /* =============================
-   TOP UNIVERSITIES
+   APPLICATIONS BY UNIVERSITY
 ============================= */
 export const getApplicationsByUniversity = async (req, res) => {
   try {
-    const db = req.db;
 
-    if (!db) {
-      return res.status(500).json({
-        message: "Database not connected",
-      });
-    }
-
-    const data = await db.collection("applications")
-      .aggregate([
-        {
-          $group: {
-            _id: "$universityName",
-            count: { $sum: 1 },
-          },
+    const data = await Application.aggregate([
+      {
+        $group: {
+          _id: "$universityName",
+          count: { $sum: 1 },
         },
-        {
-          $project: {
-            _id: 0,
-            university: "$_id",
-            count: 1,
-          },
+      },
+      {
+        $project: {
+          _id: 0,
+          university: "$_id",
+          count: 1,
         },
-        { $sort: { count: -1 } },
-        { $limit: 5 },
-      ])
-      .toArray();
+      },
+      {
+        $sort: { count: -1 },
+      },
+      {
+        $limit: 5,
+      },
+    ]);
 
     res.json(data);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
 /* =============================
-   APPLICATION STATUS
+   APPLICATION STATUS STATS
 ============================= */
 export const getApplicationStatusStats = async (req, res) => {
   try {
-    const db = req.db;
 
-    if (!db) {
-      return res.status(500).json({
-        message: "Database not connected",
-      });
-    }
-
-    const data = await db.collection("applications")
-      .aggregate([
-        {
-          $group: {
-            _id: "$applicationStatus",
-            count: { $sum: 1 },
-          },
+    const data = await Application.aggregate([
+      {
+        $group: {
+          _id: "$applicationStatus",
+          count: { $sum: 1 },
         },
-        {
-          $project: {
-            _id: 0,
-            status: "$_id",
-            count: 1,
-          },
+      },
+      {
+        $project: {
+          _id: 0,
+          status: "$_id",
+          count: 1,
         },
-      ])
-      .toArray();
+      },
+    ]);
 
     res.json(data);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
@@ -167,37 +157,43 @@ export const getApplicationStatusStats = async (req, res) => {
 ============================= */
 export const getRevenueOverTime = async (req, res) => {
   try {
-    const db = req.db;
 
-    if (!db) {
-      return res.status(500).json({
-        message: "Database not connected",
-      });
-    }
-
-    const data = await db.collection("applications")
-      .aggregate([
-        { $match: { paymentStatus: "paid" } },
-        {
-          $group: {
-            _id: {
-              year: { $year: "$createdAt" },
-              month: { $month: "$createdAt" },
-            },
-            revenue: { $sum: "$applicationFees" },
+    const data = await Application.aggregate([
+      {
+        $match: {
+          paymentStatus: "paid",
+        },
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+          },
+          revenue: {
+            $sum: "$totalAmount",
           },
         },
-        { $sort: { "_id.year": 1, "_id.month": 1 } },
-      ])
-      .toArray();
+      },
+      {
+        $sort: {
+          "_id.year": 1,
+          "_id.month": 1,
+        },
+      },
+    ]);
 
-    const formatted = data.map(item => ({
+    const formatted = data.map((item) => ({
       month: `${item._id.year}-${item._id.month}`,
       revenue: item.revenue,
     }));
 
     res.json(formatted);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };

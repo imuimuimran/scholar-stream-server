@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Scholarship from "../models/Scholarship.js";
 
 /* ======================================================
@@ -82,7 +83,17 @@ export const getScholarships = async (req, res) => {
 ====================================================== */
 export const getScholarshipById = async (req, res) => {
   try {
-    const scholarship = await Scholarship.findById(req.params.id);
+
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid scholarship id",
+      });
+    }
+
+    const scholarship =
+      await Scholarship.findById(id);
 
     if (!scholarship) {
       return res.status(404).json({
@@ -92,11 +103,10 @@ export const getScholarshipById = async (req, res) => {
 
     res.json(scholarship);
 
-  } catch (err) {
-    console.error("GET SINGLE SCHOLARSHIP ERROR:", err);
+  } catch (error) {
 
     res.status(500).json({
-      message: err.message,
+      message: error.message,
     });
   }
 };
@@ -129,19 +139,29 @@ export const createScholarship = async (req, res) => {
 ====================================================== */
 export const updateScholarship = async (req, res) => {
   try {
-    const updated = await Scholarship.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
+
+    const updated =
+      await Scholarship.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
+    if (!updated) {
+      return res.status(404).json({
+        message: "Scholarship not found",
+      });
+    }
 
     res.json(updated);
 
-  } catch (err) {
-    console.error("UPDATE SCHOLARSHIP ERROR:", err);
+  } catch (error) {
 
     res.status(500).json({
-      message: err.message,
+      message: error.message,
     });
   }
 };
@@ -151,17 +171,26 @@ export const updateScholarship = async (req, res) => {
 ====================================================== */
 export const deleteScholarship = async (req, res) => {
   try {
-    await Scholarship.findByIdAndDelete(req.params.id);
+
+    const deleted =
+      await Scholarship.findByIdAndDelete(
+        req.params.id
+      );
+
+    if (!deleted) {
+      return res.status(404).json({
+        message: "Scholarship not found",
+      });
+    }
 
     res.json({
       message: "Scholarship deleted successfully",
     });
 
-  } catch (err) {
-    console.error("DELETE SCHOLARSHIP ERROR:", err);
+  } catch (error) {
 
     res.status(500).json({
-      message: err.message,
+      message: error.message,
     });
   }
 };

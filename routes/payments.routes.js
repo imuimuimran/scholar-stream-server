@@ -11,15 +11,7 @@ const router = express.Router();
 */
 router.post("/create-payment-intent", verifyJWT, createPaymentIntent);
 
-router.post(
-  "/webhook",
-  express.raw({ type: "application/json" }),
-  (req, res, next) => {
-    req.db = global.db;
-    next();
-  },
-  stripeWebhook
-);
+router.post("/webhook", stripeWebhook);
 
 /*
   Stripe Checkout Session (optional)

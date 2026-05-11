@@ -1,5 +1,8 @@
 import express from "express";
 
+import verifyJWT from "../middlewares/verifyJWT.js";
+import verifyModerator from "../middlewares/verifyModerator.js";
+
 import {
   createReview,
   getReviewsByScholarship,
@@ -9,24 +12,35 @@ import {
   deleteReview,
 } from "../controllers/reviews.controller.js";
 
-import verifyJWT from "../middlewares/verifyJWT.js";
-import verifyModerator from "../middlewares/verifyModerator.js";
-
 const router = express.Router();
 
-/* PUBLIC */
-router.get("/scholarship/:id", getReviewsByScholarship);
+/* ================= PUBLIC ================= */
 
-/* STUDENT */
+/*
+GET /api/reviews?scholarshipId=xxx
+*/
+router.get(
+  "/scholarship/:id",
+  getReviewsByScholarship
+);
+
+/* ================= STUDENT ================= */
+
 router.post("/", verifyJWT, createReview);
-router.get("/me", verifyJWT, getMyReviews);
+
+router.get("/my", verifyJWT, getMyReviews);
+
 router.patch("/:id", verifyJWT, updateReview);
 
-/* MODERATOR / ADMIN */
-router.get("/", verifyJWT, verifyModerator, getAllReviews);
-
-/* DELETE (owner or moderator) */
 router.delete("/:id", verifyJWT, deleteReview);
 
-export default router;
+/* ================= MODERATOR ================= */
 
+router.get(
+  "/all",
+  verifyJWT,
+  verifyModerator,
+  getAllReviews
+);
+
+export default router;

@@ -1,37 +1,41 @@
-import { ObjectId } from "mongodb";
 import stripe from "../config/stripe.js";
 
-export const createPaymentIntent = async (req, res) => {
+import Scholarship from "../models/Scholarship.js";
+
+export const createPaymentIntent = async (
+  req,
+  res
+) => {
   try {
-    const { scholarshipId } = req.body;
 
-    const scholarship = await req.db
-      .collection("scholarships")
-      .findOne({ _id: new ObjectId(scholarshipId) });
+    const { amount } = req.body;
 
-    if (!scholarship) {
-      return res.status(404).json({ message: "Scholarship not found" });
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        message: "Invalid amount",
+      });
     }
 
-    const amount = scholarship.applicationFees;
-
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount * 100,
-      currency: "usd",
-
-       metadata: {
-        scholarshipId: scholarshipId,
-        scholarshipName: scholarship.scholarshipName,
-        universityName: scholarship.universityName,
-        userEmail: req.user.email,
-      },
-    });
+    const paymentIntent =
+      await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100),
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
 
     res.json({
       clientSecret: paymentIntent.client_secret,
-      amount,
     });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+  } catch (error) {
+
+    console.error(
+      "PAYMENT INTENT ERROR:",
+      error.message
+    );
+
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
