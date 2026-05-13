@@ -28,7 +28,17 @@ export const firebaseLogin = async (req, res) => {
 
     console.log("Firebase verified:", decodedToken.email);
 
-    const { email, name, picture } = decodedToken;
+    const email = decodedToken.email;
+
+    const name =
+      decodedToken.name ||
+      decodedToken.displayName ||
+      "Unknown User";
+
+    const photoURL =
+      decodedToken.picture ||
+      decodedToken.photoURL ||
+      "";
 
     /* find user */
     let user;
@@ -41,7 +51,7 @@ export const firebaseLogin = async (req, res) => {
         user = await User.create({
           name: name || "Unknown User",
           email,
-          photoURL: picture || "",
+          photoURL,
           role: "Student",
         });
 
@@ -51,7 +61,7 @@ export const firebaseLogin = async (req, res) => {
 
         /* auto sync latest firebase info */
         user.name = name || user.name;
-        user.photoURL = picture || user.photoURL;
+        user.photoURL = photoURL || user.photoURL;
 
         await user.save();
 

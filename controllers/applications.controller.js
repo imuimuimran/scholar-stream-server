@@ -8,7 +8,8 @@ export const createApplication = async (req, res) => {
   try {
     const application = new Application({
       ...req.body,
-      userEmail: req.user.email, 
+      userId: req.user.id,
+      userEmail: req.user.email,
     });
 
     await application.save();
@@ -16,8 +17,15 @@ export const createApplication = async (req, res) => {
     res.status(201).json(application);
 
   } catch (error) {
+    if (err.code === 11000) {
+      return res.status(400).json({
+        message:
+          "You already applied for this scholarship",
+      });
+    }
+
     res.status(500).json({
-      message: error.message,
+      message: err.message,
     });
   }
 };
@@ -252,7 +260,7 @@ export const updateStatus = async (
       "UPDATE STATUS ERROR:",
       error
     );
-    
+
     res.status(500).json({
       message: error.message,
     });

@@ -1,30 +1,49 @@
 import mongoose from "mongoose";
 import Review from "../models/Review.js";
+import User from "../models/User.js";
+import Scholarship from "../models/Scholarship.js";
 
 /* ===================================================
    CREATE REVIEW
 =================================================== */
 export const createReview = async (req, res) => {
   try {
+
     const {
       scholarshipId,
       rating,
       comment,
-      reviewerName,
-      reviewerEmail,
-      reviewerImage,
-      universityName,
     } = req.body;
 
     if (!scholarshipId || !rating || !comment) {
       return res.status(400).json({
-        message: "ScholarshipId, rating and comment are required",
+        message: "Missing required fields",
+      });
+    }
+
+    const scholarship = await Scholarship.findById(
+      scholarshipId
+    );
+
+    if (!scholarship) {
+      return res.status(404).json({
+        message: "Scholarship not found",
+      });
+    }
+
+    const user = await User.findOne({
+      email: req.user.email,
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
       });
     }
 
     const existing = await Review.findOne({
       scholarshipId,
-      userEmail: req.user.email,
+      userId: user._id,
     });
 
     if (existing) {
@@ -33,25 +52,32 @@ export const createReview = async (req, res) => {
       });
     }
 
-    const review = new Review({
+    const review = await Review.create({
       scholarshipId,
-      userId: req.user.id,
-      universityName,
-      rating,
-      comment,
-      reviewerName,
-      reviewerEmail,
-      reviewerImage,
-      userEmail: req.user.email,
-    });
+      userId: user._id,
 
-    await review.save();
+      scholarshipName:
+        scholarship.scholarshipName,
+
+      universityName:
+        scholarship.universityName,
+
+      reviewerName: user.name,
+      userEmail: user.email,
+      photoURL: user.photoURL,
+
+      rating: Number(rating),
+      comment,
+    });
 
     res.status(201).json(review);
 
-  } catch (error) {
+  } catch (err) {
+
+    console.error(err);
+
     res.status(500).json({
-      message: error.message,
+      message: err.message,
     });
   }
 };
