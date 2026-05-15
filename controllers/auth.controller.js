@@ -30,14 +30,26 @@ export const firebaseLogin = async (req, res) => {
 
     const email = decodedToken.email;
 
+    // const name =
+    //   decodedToken.name ||
+    //   decodedToken.displayName ||
+    //   "Unknown User";
+
+    // const photoURL =
+    //   decodedToken.picture ||
+    //   decodedToken.photoURL ||
+    //   "";
+
     const name =
       decodedToken.name ||
       decodedToken.displayName ||
+      req.body?.name ||
       "Unknown User";
 
     const photoURL =
       decodedToken.picture ||
       decodedToken.photoURL ||
+      req.body?.photoURL ||
       "";
 
     /* find user */
@@ -62,6 +74,20 @@ export const firebaseLogin = async (req, res) => {
         /* auto sync latest firebase info */
         user.name = name || user.name;
         user.photoURL = photoURL || user.photoURL;
+
+        if (
+          name &&
+          user.name === "Unknown User"
+        ) {
+          user.name = name;
+        }
+
+        if (
+          photoURL &&
+          !user.photoURL
+        ) {
+          user.photoURL = photoURL;
+        }
 
         await user.save();
 

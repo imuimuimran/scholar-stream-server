@@ -19,6 +19,8 @@ const router = express.Router();
 /*
 GET /api/reviews?scholarshipId=xxx
 */
+router.get("/", getAllReviews);
+
 router.get(
   "/scholarship/:id",
   getReviewsByScholarship
