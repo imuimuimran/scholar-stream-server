@@ -58,40 +58,51 @@ export const firebaseLogin = async (req, res) => {
     try {
       user = await User.findOne({ email });
 
-      /* create user if not exists */
+      /* ================= CREATE USER IF NOT EXISTS ================= */
       if (!user) {
         user = await User.create({
-          name: name || "Unknown User",
+          name:
+            name &&
+              name !== "Unknown User"
+              ? name
+              : req.body?.name || "Unknown User",
+
           email,
-          photoURL,
+
+          photoURL:
+            photoURL ||
+            req.body?.photoURL ||
+            "",
+
           role: "Student",
         });
 
         console.log("New user created ✅");
+      }
 
-      } else {
-
-        /* auto sync latest firebase info */
-        user.name = name || user.name;
-        user.photoURL = photoURL || user.photoURL;
-
+      /* ================= UPDATE EXISTING USER ================= */
+      else {
+        // update name if DB still has placeholder
         if (
           name &&
+          name !== "Unknown User" &&
           user.name === "Unknown User"
         ) {
           user.name = name;
         }
 
+        // update photo if DB empty
         if (
-          photoURL &&
+          (photoURL || req.body?.photoURL) &&
           !user.photoURL
         ) {
-          user.photoURL = photoURL;
+          user.photoURL =
+            photoURL || req.body?.photoURL;
         }
 
         await user.save();
-
         console.log("Existing user synced ✅");
+
       }
 
     } catch (dbError) {

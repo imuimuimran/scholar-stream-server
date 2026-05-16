@@ -17,7 +17,7 @@ export const createApplication = async (req, res) => {
     res.status(201).json(application);
 
   } catch (error) {
-    if (err.code === 11000) {
+    if (error.code === 11000) {
       return res.status(400).json({
         message:
           "You already applied for this scholarship",
@@ -25,7 +25,7 @@ export const createApplication = async (req, res) => {
     }
 
     res.status(500).json({
-      message: err.message,
+      message: error.message,
     });
   }
 };
