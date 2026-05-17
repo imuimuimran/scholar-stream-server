@@ -15,12 +15,19 @@ import analyticsRoutes from "./routes/analytics.routes.js";
 
 const app = express();
 
+/* ================= DATABASE ================= */
+
+await connectDB();
+
+console.log("MongoDB connected ✅");
+
 /* ================= MIDDLEWARES ================= */
 
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
+      process.env.CLIENT_URL,
     ],
     credentials: true,
   })
@@ -37,7 +44,7 @@ app.use(express.json());
 /* ================= HEALTH CHECK ================= */
 
 app.get("/", (req, res) => {
-  res.send("ScholarStream API running");
+  res.send("ScholarStream API running ✅");
 });
 
 /* ================= ROUTES ================= */
@@ -68,30 +75,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-/* ================= START SERVER ================= */
+/* ================= EXPORT APP ================= */
 
-const startServer = async () => {
-  try {
-
-    await connectDB();
-
-    console.log("MongoDB connected ✅");
-
-    const PORT = process.env.PORT || 5000;
-
-    if (process.env.NODE_ENV !== "production") {
-      app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-      });
-    }
-
-  } catch (error) {
-
-    console.error(
-      "Server startup failed ❌",
-      error
-    );
-  }
-};
-
-startServer();
+export default app;
