@@ -15,11 +15,9 @@ import analyticsRoutes from "./routes/analytics.routes.js";
 
 const app = express();
 
-/* ================= DATABASE ================= */
+/* ================= CONNECT DB ================= */
 
-await connectDB();
-
-console.log("MongoDB connected ✅");
+connectDB();
 
 /* ================= MIDDLEWARES ================= */
 
@@ -68,13 +66,13 @@ app.use((req, res) => {
 /* ================= ERROR HANDLER ================= */
 
 app.use((err, req, res, next) => {
-  console.error(err);
+  console.error("SERVER ERROR:", err);
 
   res.status(500).json({
     message: err.message || "Internal Server Error",
   });
 });
 
-/* ================= EXPORT APP ================= */
+/* ================= EXPORT ================= */
 
 export default app;
