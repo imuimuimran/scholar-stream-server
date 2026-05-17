@@ -7,7 +7,7 @@ import User from "../models/User.js";
 ================================== */
 export const firebaseLogin = async (req, res) => {
   try {
-    console.log("AUTH HEADER:", req.headers.authorization);
+    // console.log("AUTH HEADER:", req.headers.authorization);
 
     const authHeader = req.headers.authorization;
 
@@ -21,12 +21,12 @@ export const firebaseLogin = async (req, res) => {
     /* get firebase token */
     const idToken = authHeader.split(" ")[1];
 
-    console.log("Firebase token received");
+    // console.log("Firebase token received");
 
     /* verify firebase token */
     const decodedToken = await admin.auth().verifyIdToken(idToken);
 
-    console.log("Firebase verified:", decodedToken.email);
+    // console.log("Firebase verified:", decodedToken.email);
 
     const email = decodedToken.email;
 

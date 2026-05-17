@@ -1,16 +1,15 @@
 import admin from "firebase-admin";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+/* DECODE BASE64 FIREBASE KEY */
+const decoded = Buffer.from(
+  process.env.FB_SERVICE_KEY,
+  "base64"
+).toString("utf8");
 
-const serviceAccount = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "serviceAccount.json"), "utf-8")
-);
+/* PARSE JSON */
+const serviceAccount = JSON.parse(decoded);
 
-/* prevent re-initialization */
+/* PREVENT RE-INITIALIZATION */
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
